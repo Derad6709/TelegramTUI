@@ -2,6 +2,7 @@ import socks, os
 from telethon import TelegramClient, events
 from datetime import timedelta
 from telegramtui.src.config import get_config
+from telethon.sessions import StringSession
 
 
 class TelegramApi:
@@ -19,7 +20,10 @@ class TelegramApi:
         api_id = config.get('telegram_api', 'api_id')
         api_hash = config.get('telegram_api', 'api_hash')
         workers = config.get('telegram_api', 'workers')
+
         session_name = config.get('telegram_api', 'session_name')
+        session_string = config.get('telegram_api', 'session_string')
+            
 
         self.timezone = int(config.get('other', 'timezone'))
         self.message_dialog_len = int(config.get('app', 'message_dialog_len'))
@@ -39,12 +43,14 @@ class TelegramApi:
         proxy_password = config.get('proxy', 'password')
 
         proxy = (proxy_type, proxy_addr, proxy_port, False, proxy_username, proxy_password)
+        if session_string:
+            self.client = TelegramClient(StringSession(session_string), api_id, api_hash, update_workers=int(workers), spawn_read_thread=True, proxy=proxy)
+        else:
+            session_name = os.path.expanduser("~") + '/.config/telegramtui/' + session_name
 
-        session_name = os.path.expanduser("~") + '/.config/telegramtui/' + session_name
-
-        # create connection
-        self.client = TelegramClient(session_name, api_id, api_hash, update_workers=int(workers),
-                                     spawn_read_thread=True, proxy=proxy)
+            # create connection
+            self.client = TelegramClient(session_name, api_id, api_hash, update_workers=int(workers),
+                                         spawn_read_thread=True, proxy=proxy)
         try:
             self.client.start()
         except Exception as ex:
